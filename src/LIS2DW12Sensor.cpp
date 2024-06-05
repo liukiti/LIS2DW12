@@ -1540,3 +1540,23 @@ int32_t LIS2DW12_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint1
 {
   return ((LIS2DW12Sensor *)handle)->IO_Read(pBuffer, ReadAddr, nBytesToRead);
 }
+
+/**
+ * @brief  Read Temperature from LIS2DW12 Accelerometer
+ * @param  temperature the pointer where the temperature data are stored
+ * @retval 0 in case of success, an error code otherwise
+ */
+LIS2DW12StatusTypeDef LIS2DW12Sensor::Get_Temperature(float *temperature)
+{
+  uint8_t tempraw[2];
+  uint16_t tempint;
+  
+  if(lis2dw12_temperature_raw_get(&reg_ctx, tempraw) != 0)
+    return LIS2DW12_STATUS_ERROR;
+
+  //https://community.st.com/t5/mems-sensors/lis2dw12-temperature-reading-fluctuates/td-p/190144
+  tempint = (tempraw[1]<<8) + tempraw[0];
+  *temperature = (float)tempint/256 + 25.0f;
+
+  return LIS2DW12_STATUS_OK;
+}

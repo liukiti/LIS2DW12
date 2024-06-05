@@ -143,6 +143,7 @@ class LIS2DW12Sensor
     LIS2DW12StatusTypeDef Set_FIFO_Mode(uint8_t mode);
     LIS2DW12StatusTypeDef ReadReg(uint8_t reg, uint8_t *data);
     LIS2DW12StatusTypeDef WriteReg(uint8_t reg, uint8_t data);
+    LIS2DW12StatusTypeDef Get_Temperature(float *temperature);
     
     /**
      * @brief Utility function to read data.
