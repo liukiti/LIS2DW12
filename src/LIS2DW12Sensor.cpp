@@ -41,6 +41,7 @@
 
 #include "LIS2DW12Sensor.h"
 
+static const char* TAG = "LIS2DW12Sensor";
 
 /* Class Implementation ------------------------------------------------------*/
 
@@ -70,6 +71,201 @@ LIS2DW12Sensor::LIS2DW12Sensor(SPIClass *spi, int cs_pin, uint32_t spi_speed) : 
   dev_i2c = NULL;
   address = 0;
   X_isEnabled = 0;
+}
+
+LIS2DW12Sensor::LIS2DW12Sensor(i2c_port_t port, int sda, int scl)
+{
+    dev_spi = NULL;
+    reg_ctx.write_reg = write_byte;
+    reg_ctx.read_reg = read_byte;
+    reg_ctx.handle = (void *)this;
+    X_isEnabled = 0;
+
+    m_port = port;
+    m_sda = sda;
+    m_scl = scl;
+
+	esp_err_t err = ESP_OK;
+
+    if (GPIO_IS_VALID_GPIO(sda) == false)
+    {
+        ESP_LOGE(TAG, "%s INVALID ARG", __func__);
+    }
+    if (GPIO_IS_VALID_GPIO(scl) == false)
+    {
+        ESP_LOGE(TAG, "%s INVALID ARG", __func__);
+    }
+
+	i2c_config_t conf;
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = m_sda;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.scl_io_num = m_scl;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.master.clk_speed = I2C_FREQUENCY;
+    conf.clk_flags = I2C_SCLK_SRC_FLAG_FOR_NOMAL;
+
+	err = i2c_param_config(m_port, &conf);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+    }
+
+	err = i2c_driver_install(m_port, I2C_MODE_MASTER, 0, 0, 0);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+    }
+}
+
+int32_t LIS2DW12Sensor::_read_byte(uint8_t addr, uint8_t *data, uint16_t size)
+{
+    esp_err_t err = ESP_OK;
+
+    uint8_t wAddr = (LIS2DW12_I2C_ADD_L - 0x01);
+    uint8_t rAddr = (LIS2DW12_I2C_ADD_L);
+
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+    // dummy write begin
+    // start bit
+	err = i2c_master_start(cmd);
+	if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // device address
+    err = i2c_master_write_byte(cmd, wAddr, ACK_ENABLE);
+	if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // dummy write end
+    // memory address
+	err = i2c_master_write_byte(cmd, addr, ACK_ENABLE);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // random read begin
+    // start bit
+    err = i2c_master_start(cmd);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // device address
+	err = i2c_master_write_byte(cmd, rAddr, ACK_ENABLE);
+	if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // byte read
+    for (int i = 0; i < size; i++)
+    {
+        err = i2c_master_read_byte(cmd, &data[i], (i == size - 1) ? NACK : ACK);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+            return LIS2DW12_STATUS_ERROR;
+        }
+    }
+
+    // stop bit
+	err = i2c_master_stop(cmd);
+	if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+	err = i2c_master_cmd_begin(m_port, cmd, 1000 / portTICK_PERIOD_MS);
+	if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", __func__, esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+	i2c_cmd_link_delete(cmd);
+
+	return LIS2DW12_STATUS_OK;
+}
+
+int32_t LIS2DW12Sensor::_write_byte(uint8_t addr, uint8_t *data, uint16_t size)
+{
+    esp_err_t err = ESP_OK;
+
+    uint8_t wAddr = ((uint8_t)(((LIS2DW12_I2C_ADD_H) >> 1) & 0x7F));
+
+	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+	
+    // start bit
+    err = i2c_master_start(cmd);
+	if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", "i2c_master_start", esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // device address
+    err = i2c_master_write_byte(cmd, wAddr, ACK_ENABLE);
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "%s (%s)", "i2c_master_write_byte", esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // memory address
+	err = i2c_master_write_byte(cmd, addr, ACK_ENABLE);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", "i2c_master_write_byte", esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // data
+    for (int i = 0; i < size; i++)
+    {
+        err = i2c_master_write_byte(cmd, data[i], ACK_ENABLE);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "%s (%s)", "i2c_master_write_byte", esp_err_to_name(err));
+            return LIS2DW12_STATUS_ERROR;
+        }
+    }
+
+    // stop bit
+	err = i2c_master_stop(cmd);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", "i2c_master_stop", esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    // i2c_set_period
+
+	err = i2c_master_cmd_begin(m_port, cmd, 1000 / portTICK_PERIOD_MS);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "%s (%s)", "i2c_master_cmd_begin", esp_err_to_name(err));
+        return LIS2DW12_STATUS_ERROR;
+    }
+
+    i2c_cmd_link_delete(cmd);
+
+	usleep(1000*2);
+    
+	return LIS2DW12_STATUS_OK;
 }
 
 /**
@@ -1539,6 +1735,16 @@ int32_t LIS2DW12_io_write(void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uin
 int32_t LIS2DW12_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead)
 {
   return ((LIS2DW12Sensor *)handle)->IO_Read(pBuffer, ReadAddr, nBytesToRead);
+}
+
+int32_t write_byte(void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uint16_t nBytesToWrite)
+{
+  return ((LIS2DW12Sensor *)handle)->_write_byte(WriteAddr, pBuffer, nBytesToWrite);
+}
+
+int32_t read_byte(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead)
+{
+  return ((LIS2DW12Sensor *)handle)->_read_byte(ReadAddr, pBuffer, nBytesToRead);
 }
 
 /**

@@ -48,6 +48,7 @@
 #include "Wire.h"
 #include "SPI.h"
 #include "lis2dw12_reg.h"
+#include "driver/i2c.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* For compatibility with ESP32 platforms */
@@ -98,6 +99,12 @@ typedef enum
   LIS2DW12_LOW_NOISE_ENABLE
 } LIS2DW12_Low_Noise_t;
 
+#define I2C_FREQUENCY   400000
+#define ACK_ENABLE      0x1     /*!< I2C master will check ack from slave*/
+#define ACK_DISABLE     0x0     /*!< I2C master will not check ack from slave */
+#define ACK             I2C_MASTER_ACK     /*!< I2C ack value */
+#define NACK            I2C_MASTER_NACK     /*!< I2C nack value */
+
 /* Class Declaration ---------------------------------------------------------*/
    
 /**
@@ -109,6 +116,7 @@ class LIS2DW12Sensor
   public:
     LIS2DW12Sensor(TwoWire *i2c, uint8_t address=LIS2DW12_I2C_ADD_H);
     LIS2DW12Sensor(SPIClass *spi, int cs_pin, uint32_t spi_speed=2000000);
+    LIS2DW12Sensor(i2c_port_t port, int sda, int scl);
     LIS2DW12StatusTypeDef begin();
     LIS2DW12StatusTypeDef end();
     LIS2DW12StatusTypeDef Enable_X(void);
@@ -236,6 +244,9 @@ class LIS2DW12Sensor
       return 1;
     }
 
+    int32_t _read_byte(uint8_t addr, uint8_t *data, uint16_t size);
+    int32_t _write_byte(uint8_t addr, uint8_t *data, uint16_t size);
+
   private:
     LIS2DW12StatusTypeDef Set_X_ODR_When_Enabled(float odr, LIS2DW12_Operating_Mode_t mode, LIS2DW12_Low_Noise_t noise);
     LIS2DW12StatusTypeDef Set_X_ODR_When_Disabled(float odr, LIS2DW12_Operating_Mode_t mode, LIS2DW12_Low_Noise_t noise);
@@ -243,6 +254,10 @@ class LIS2DW12Sensor
     /* Helper classes. */
     TwoWire *dev_i2c;
     SPIClass *dev_spi;
+
+    i2c_port_t m_port;
+    int m_sda;
+    int m_scl;
     
     /* Configuration */
     uint8_t address;
@@ -262,6 +277,8 @@ class LIS2DW12Sensor
 #endif
 int32_t LIS2DW12_io_write( void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uint16_t nBytesToWrite );
 int32_t LIS2DW12_io_read( void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead );
+int32_t write_byte(void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uint16_t nBytesToWrite);
+int32_t read_byte(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead);
 #ifdef __cplusplus
   }
 #endif
