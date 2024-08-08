@@ -1755,13 +1755,13 @@ int32_t read_byte(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBy
 LIS2DW12StatusTypeDef LIS2DW12Sensor::Get_Temperature(float *temperature)
 {
   uint8_t tempraw[2];
-  uint16_t tempint;
+  int16_t tempint;
   
   if(lis2dw12_temperature_raw_get(&reg_ctx, tempraw) != 0)
     return LIS2DW12_STATUS_ERROR;
 
   //https://community.st.com/t5/mems-sensors/lis2dw12-temperature-reading-fluctuates/td-p/190144
-  tempint = (tempraw[1]<<8) + tempraw[0];
+  tempint = ((int16_t) tempraw[1]<<8 ) + tempraw[0];
   *temperature = (float)tempint/256 + 25.0f;
 
   return LIS2DW12_STATUS_OK;
