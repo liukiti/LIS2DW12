@@ -442,6 +442,7 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::Get_X_Axes(int32_t *acceleration)
   }
   
   /* Calculate the data. */
+  printf("%f raw[0]=%d raw[0]=%d raw[0]=%d\r\n", sensitivity, data_raw[0], data_raw[1], data_raw[2]);
   acceleration[0] = (int32_t)(data_raw[0] * sensitivity);
   acceleration[1] = (int32_t)(data_raw[1] * sensitivity);
   acceleration[2] = (int32_t)(data_raw[2] * sensitivity);
@@ -573,7 +574,7 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::Get_X_AxesRaw(int16_t *value)
   {
     return LIS2DW12_STATUS_ERROR;
   }
-
+  printf("data_raw.i16bit[0]: %d data_raw.i16bit[1]:%d data_raw.i16bit[2]:%d\r\n", data_raw.i16bit[0], data_raw.i16bit[1], data_raw.i16bit[2]);
   switch(mode)
   {
     case LIS2DW12_CONT_LOW_PWR_12bit:
