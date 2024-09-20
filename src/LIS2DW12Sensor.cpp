@@ -1763,6 +1763,7 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::Get_Temperature(float *temperature)
 
   //https://community.st.com/t5/mems-sensors/lis2dw12-temperature-reading-fluctuates/td-p/190144
   tempint = ((int16_t) tempraw[1]<<8 ) + tempraw[0];
+  printf("tempraw[1]: %02X tempraw[0]: %02X\r\n", tempraw[1], tempraw[0]);
   *temperature = (float)tempint/256 + 25.0f;
 
   return LIS2DW12_STATUS_OK;

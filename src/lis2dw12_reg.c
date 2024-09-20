@@ -1546,7 +1546,8 @@ int32_t lis2dw12_pin_int2_route_set(lis2dw12_ctx_t *ctx,
   ret = lis2dw12_read_reg(ctx, LIS2DW12_CTRL_REG7,(uint8_t*) &reg, 1);
   if (ret == 0) {
     if ((val->int2_sleep_state | val->int2_sleep_chg ) != PROPERTY_DISABLE) {  
-      reg.interrupts_enable = PROPERTY_ENABLE;   
+      reg.interrupts_enable = PROPERTY_ENABLE;
+      reg.int2_on_int1 = PROPERTY_ENABLE;   
     } 
     else{
       reg.interrupts_enable = PROPERTY_DISABLE;
