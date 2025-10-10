@@ -48,7 +48,6 @@
 #include "Wire.h"
 #include "SPI.h"
 #include "lis2dw12_reg.h"
-#include "driver/i2c_master.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* For compatibility with ESP32 platforms */
@@ -116,7 +115,6 @@ class LIS2DW12Sensor
   public:
     LIS2DW12Sensor(TwoWire *i2c, uint8_t address=LIS2DW12_I2C_ADD_H);
     LIS2DW12Sensor(SPIClass *spi, int cs_pin, uint32_t spi_speed=2000000);
-    LIS2DW12Sensor(i2c_port_t port, int sda, int scl);
     LIS2DW12StatusTypeDef begin();
     LIS2DW12StatusTypeDef end();
     LIS2DW12StatusTypeDef Enable_X(void);
@@ -255,7 +253,6 @@ class LIS2DW12Sensor
     TwoWire *dev_i2c;
     SPIClass *dev_spi;
 
-    i2c_port_t m_port;
     int m_sda;
     int m_scl;
     
