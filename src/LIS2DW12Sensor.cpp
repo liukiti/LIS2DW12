@@ -104,13 +104,23 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::begin()
   }
 
   /* Power mode selection */
-  if (lis2dw12_power_mode_set(&reg_ctx, LIS2DW12_HIGH_PERFORMANCE) != 0)
+  if (lis2dw12_power_mode_set(&reg_ctx, LIS2DW12_CONT_LOW_PWR_12bit) != 0)
   {
     return LIS2DW12_STATUS_ERROR;
   }
 
   /* Output data rate selection - power down. */
   if (lis2dw12_data_rate_set(&reg_ctx, LIS2DW12_XL_ODR_OFF) != 0)
+  {
+    return LIS2DW12_STATUS_ERROR;
+  }
+
+  if (lis2dw12_pin_mode_set(&reg_ctx, LIS2DW12_PUSH_PULL) != 0)
+  {
+    return LIS2DW12_STATUS_ERROR;
+  }
+
+  if (lis2dw12_pin_polarity_set(&reg_ctx, LIS2DW12_ACTIVE_HIGH) != 0)
   {
     return LIS2DW12_STATUS_ERROR;
   }
@@ -122,9 +132,9 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::begin()
   }
 
   /* Select default output data rate. */
-  X_Last_ODR = 100.0f;
+  X_Last_ODR = 1.6f;
 
-  X_Last_Operating_Mode = LIS2DW12_HIGH_PERFORMANCE_MODE;
+  X_Last_Operating_Mode = LIS2DW12_LOW_POWER_MODE1;
 
   X_Last_Noise = LIS2DW12_LOW_NOISE_DISABLE;
 
@@ -191,7 +201,8 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::Disable_X(void)
   }
 
   /* Output data rate selection - power down. */
-  if (lis2dw12_data_rate_set(&reg_ctx, LIS2DW12_XL_ODR_OFF) != 0)
+  // if (lis2dw12_data_rate_set(&reg_ctx, LIS2DW12_XL_ODR_OFF) != 0)
+  if (lis2dw12_data_rate_set(&reg_ctx, LIS2DW12_XL_ODR_1Hz6_LP_ONLY) != 0)
   {
     return LIS2DW12_STATUS_ERROR;
   }
@@ -620,7 +631,7 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::Get_X_ODR(float* odr)
  */
 LIS2DW12StatusTypeDef LIS2DW12Sensor::Set_X_ODR(float odr)
 { 
-  return Set_X_ODR_With_Mode(odr, LIS2DW12_HIGH_PERFORMANCE_MODE, LIS2DW12_LOW_NOISE_DISABLE);
+  return Set_X_ODR_With_Mode(odr, LIS2DW12_LOW_POWER_MODE1, LIS2DW12_LOW_NOISE_DISABLE);
 }
 
 /**
@@ -891,7 +902,7 @@ LIS2DW12StatusTypeDef LIS2DW12Sensor::Enable_Wake_Up_Detection(void)
   lis2dw12_ctrl4_int1_pad_ctrl_t val;
 
   /* Output Data Rate selection */
-  if (Set_X_ODR(200.0f) != LIS2DW12_STATUS_OK)
+  if (Set_X_ODR(1.6f) != LIS2DW12_STATUS_OK)
   {
     return LIS2DW12_STATUS_ERROR;
   }
