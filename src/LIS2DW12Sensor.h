@@ -48,7 +48,7 @@
 #include "Wire.h"
 #include "SPI.h"
 #include "lis2dw12_reg.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 
 /* Defines -------------------------------------------------------------------*/
 /* For compatibility with ESP32 platforms */
